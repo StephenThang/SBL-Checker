@@ -1,0 +1,84 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model AnalysisJob {
+  id              String          @id @default(cuid())
+  url             String
+  sourceType      String
+  status          String
+  inputTranscript String?
+  manualClaims    String?
+  warningsJson    String?
+  logsJson        String
+  attempts        Int             @default(0)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  result          AnalysisResult?
+}
+
+model SourceDocument {
+  id          String          @id
+  title       String
+  citation    String
+  url         String
+  year        Int?
+  studyType   String
+  qualityBand String
+  topicsJson  String
+  summary     String
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  claims      EvidenceClaim[]
+}
+
+model EvidenceClaim {
+  id          String         @id
+  sourceId    String
+  topic       String
+  statement   String
+  implication String
+  caution     String?
+  confidence  Float
+  source      SourceDocument @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model AnalysisResult {
+  id                String         @id @default(cuid())
+  jobId             String         @unique
+  score             Int
+  label             String
+  confidenceBand    String
+  summaryJson       String
+  verdictsJson      String
+  testingJson       String
+  evaluationJson    String
+  telemetryJson     String
+  disclaimer        String
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  job               AnalysisJob    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  feedback          UserFeedback[]
+}
+
+model UserFeedback {
+  id          String         @id @default(cuid())
+  analysisId  String
+  rating      Int
+  helpfulness String
+  notes       String?
+  createdAt   DateTime       @default(now())
+  analysis    AnalysisResult @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+}
